@@ -241,6 +241,11 @@ void OptionsAdvancedState::lstOptionsClick(Action *action)
 			min = 1;
 			max = 5;
 		}
+		else if (i == &Options::alienBaseLimit)
+		{
+			min = 8;
+			max = 25;
+		}
 
 		if (*i < min)
 		{
