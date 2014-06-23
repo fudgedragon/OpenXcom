@@ -22,6 +22,7 @@
 #include "Target.h"
 #include <string>
 #include <yaml-cpp/yaml.h>
+#include <stdint.h>
 
 namespace OpenXcom
 {
@@ -35,6 +36,8 @@ private:
 	int _id;
 	std::string _race;
 	bool _inBattlescape, _discovered;
+	uint64_t _baseSeed;
+	int _supplyLevel, _crewLevel;
 public:
 	/// Creates an alien base.
 	AlienBase();
@@ -64,6 +67,16 @@ public:
 	bool isDiscovered() const;
 	/// Sets the alien base's discovered status.
 	void setDiscovered(bool discovered);
+	/// Gets the seed used for generating this base's battlescape maps.
+	uint64_t getSeed() const;
+	/// Gets the base supply level.
+	int getSupply() const;
+	/// Sets the base supply level.
+	void setSupply(int supply);
+	/// Gets the base crew level.
+	int getCrew() const;
+	/// Sets the base crew level.
+	void setCrew(int crew);
 };
 
 }

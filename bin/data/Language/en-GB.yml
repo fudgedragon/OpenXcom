@@ -1359,3 +1359,5 @@ en-GB:
   STR_MAXIMIZE_INFO_SCREENS_DESC: "Inventory and various other screens will be displayed at full screen, regardless of scale settings."
   STR_JAPANESE_FONT: "If you have a Japanese font that works in OpenXCom: please, send it to us and let us know if we can use it."
   STR_NOT_ENOUGH_ITEMS_FOR_TEMPLATE: "Not enough items to copy template!"
+  STR_IMPROVED_ALIEN_BASES: "Improved Alien Bases"
+  STR_IMPROVED_ALIEN_BASES_DESC: "Makes base terrain persistent, tracks base crew and supplies, with supply shortages causing base vulnerability.{NEWLINE}Bases can be founded undersupplied or prevented outright by disrupting initial mission."

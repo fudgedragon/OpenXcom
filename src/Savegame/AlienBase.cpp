@@ -18,6 +18,8 @@
  */
 #include "AlienBase.h"
 #include <sstream>
+#include <time.h>
+#include "../Engine/Options.h"
 #include "../Engine/Language.h"
 
 namespace OpenXcom
@@ -28,6 +30,7 @@ namespace OpenXcom
  */
 AlienBase::AlienBase() : Target(), _id(0), _inBattlescape(false), _discovered(false)
 {
+	_baseSeed = time(0), _supplyLevel = 0, _crewLevel = 0; //Initialise my improved bases values - FD
 }
 
 /**
@@ -48,6 +51,9 @@ void AlienBase::load(const YAML::Node &node)
 	_race = node["race"].as<std::string>(_race);
 	_inBattlescape = node["inBattlescape"].as<bool>(_inBattlescape);
 	_discovered = node["discovered"].as<bool>(_discovered);
+	_baseSeed = node["seed"].as<uint64_t>(_baseSeed);
+	_supplyLevel = node["supply"].as<int>(_supplyLevel);
+	_crewLevel = node["crew"].as<int>(_crewLevel);
 }
 
 /**
@@ -63,6 +69,12 @@ YAML::Node AlienBase::save() const
 		node["inBattlescape"] = _inBattlescape;
 	if (_discovered)
 		node["discovered"] = _discovered;
+	if (Options::improvedAlienBases)
+	{
+		node["seed"] = _baseSeed;
+		node["supply"] = _supplyLevel;
+		node["crew"] = _crewLevel;
+	}
 	return node;
 }
 
@@ -158,6 +170,51 @@ bool AlienBase::isDiscovered() const
 void AlienBase::setDiscovered(bool discovered)
 {
 	_discovered = discovered;
+}
+
+/**
+ * Gets the seed used for generating this base's battlescape maps.
+ * @return seed current base uses for battlescape generation.
+ */
+uint64_t AlienBase::getSeed() const
+{
+	return _baseSeed;
+}
+
+/**
+ * Gets the base supply level.
+ * @return percentage of current base supply.
+ */
+int AlienBase::getSupply() const
+{
+	return _supplyLevel;
+}
+
+/**
+ * Sets the base supply level.
+ * @param supply percentage of current base supply.
+ */
+void AlienBase::setSupply(int supply)
+{
+	_supplyLevel = supply;
+}
+
+/**
+ * Gets the base crew level.
+ * @return percentage of current base crew.
+ */
+int AlienBase::getCrew() const
+{
+	return _crewLevel;
+}
+
+/**
+ * Sets the base crew level.
+ * @param crew percentage of current base crew.
+ */
+void AlienBase::setCrew(int crew)
+{
+	_crewLevel = crew;
 }
 
 }
