@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "../Savegame/GameTime.h"
+#include "../Savegame/SavedGame.h"
 
 namespace OpenXcom
 {
@@ -63,6 +65,7 @@ private:
 	std::vector<ReequipStat> _missingItems;
 	std::map<RuleItem*, int> _rounds;
 	std::map<int, RecoveryItem*> _recoveryStats;
+    MissionStatistics *_missionStatistics;
 	/// Adds to the debriefing stats.
 	void addStat(const std::string &name, int quantity, int score);
 	/// Prepares debriefing.
@@ -74,6 +77,8 @@ private:
 	/// Reequips a craft after a mission.
 	void reequipCraft(Base *base, Craft *craft, bool vehicleItemsCanBeDestroyed);
 	bool _noContainment, _manageContainment, _destroyBase;
+	int _containmentLimit;
+	std::vector<Soldier*> _soldiersCommended, _deadSoldiersCommended;
 	int _limitsEnforced;
 public:
 	/// Creates the Debriefing state.

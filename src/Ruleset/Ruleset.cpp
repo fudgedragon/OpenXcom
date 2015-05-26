@@ -35,6 +35,7 @@
 #include "MapDataSet.h"
 #include "MapScript.h"
 #include "RuleSoldier.h"
+#include "RuleCommendations.h"
 #include "Unit.h"
 #include "AlienRace.h"
 #include "AlienDeployment.h"
@@ -70,6 +71,7 @@
 #include "../Resource/ResourcePack.h"
 #include "RuleVideo.h"
 #include "../Engine/RNG.h"
+#include "../Savegame/SoldierDiary.h"
 
 namespace OpenXcom
 {
@@ -218,6 +220,10 @@ Ruleset::~Ruleset()
 		delete i->second;
 	}
 	for (std::map<std::string, RuleMusic *>::const_iterator i = _musics.begin(); i != _musics.end(); ++i)
+	{
+		delete i->second;
+	}
+	for (std::map<std::string, RuleCommendations *>::const_iterator i = _commendations.begin(); i != _commendations.end(); ++i)
 	{
 		delete i->second;
 	}
@@ -528,6 +534,13 @@ void Ruleset::loadFile(const std::string &filename)
 			_extraStringsIndex.push_back(type);
 		}
 	}
+	for (YAML::const_iterator i = doc["commendations"].begin(); i != doc["commendations"].end(); ++i)
+	{
+		std::string type = (*i)["type"].as<std::string>();
+		std::auto_ptr<RuleCommendations> commendations(new RuleCommendations());
+		commendations->load(*i);
+        _commendations[type] = commendations.release();
+	}
 
 	for (YAML::const_iterator i = doc["statStrings"].begin(); i != doc["statStrings"].end(); ++i)
 	{
@@ -783,6 +796,11 @@ SavedGame *Ruleset::newSave() const
 		Soldier *soldier = genSoldier(save);
 		soldier->setCraft(base->getCrafts()->front());
 		base->getSoldiers()->push_back(soldier);
+		soldier->getDiary()->awardOriginalEightCommendation();
+		for (std::vector<SoldierCommendations*>::iterator comm = soldier->getDiary()->getSoldierCommendations()->begin(); comm != soldier->getDiary()->getSoldierCommendations()->end(); ++comm)
+		{
+			(*comm)->makeOld(); // Soldier was already awarded these before arriving on base.
+		}
 	}
 
 	save->getBases()->push_back(base);
@@ -1001,6 +1019,15 @@ RuleSoldier *Ruleset::getSoldier(const std::string &name) const
 {
 	std::map<std::string, RuleSoldier*>::const_iterator i = _soldiers.find(name);
 	if (_soldiers.end() != i) return i->second; else return 0;
+}
+
+/**
+ * Gets the list of commendations
+ * @return The list of commendations.
+ */
+std::map<std::string, RuleCommendations *> Ruleset::getCommendation() const
+{
+	return _commendations;
 }
 
 /**

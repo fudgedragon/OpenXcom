@@ -37,11 +37,13 @@
 #include "Globe.h"
 #include "../Savegame/AlienBase.h"
 #include "../Engine/Options.h"
+#include "../Savegame/Base.h"
+#include "../Battlescape/CommendationState.h"
+#include "../Savegame/SoldierDiary.h"
 #include "../Menu/SaveGameState.h"
 
 namespace OpenXcom
 {
-
 /**
  * Initializes all the elements in the Monthly Report screen.
  * @param game Pointer to the core game.
@@ -193,6 +195,7 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 		_sadList.erase(_sadList.begin(), _sadList.end());
 		_gameOver = true;
 	}
+
 	ss5 << satisFactionString;
 
 	if (!_gameOver)
@@ -216,7 +219,6 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 			}
 		}
 	}
-
 	if (resetWarning && _game->getSavedGame()->getWarned())
 		_game->getSavedGame()->setWarned(false);
 
@@ -226,16 +228,12 @@ MonthlyReportState::MonthlyReportState(bool psi, Globe *globe) : _psi(psi), _gam
 
 	_txtDesc->setText(ss5.str());
 }
-
-
 /**
  *
  */
 MonthlyReportState::~MonthlyReportState()
 {
-
 }
-
 /**
  * Returns to the previous screen.
  * @param action Pointer to an action.
@@ -245,6 +243,26 @@ void MonthlyReportState::btnOkClick(Action *)
 	if (!_gameOver)
 	{
 		_game->popState();
+		// Award medals for service time
+		// Iterate through all your bases
+		for (std::vector<Base*>::iterator b = _game->getSavedGame()->getBases()->begin(); b != _game->getSavedGame()->getBases()->end(); ++b)
+		{
+			// Iterate through all your soldiers
+			for (std::vector<Soldier*>::iterator s = (*b)->getSoldiers()->begin(); s != (*b)->getSoldiers()->end(); ++s)
+			{
+				Soldier *soldier = _game->getSavedGame()->getSoldier((*s)->getId());
+				// Award medals to eligible soldiers
+				soldier->getDiary()->addMonthlyService();
+				if (soldier->getDiary()->manageCommendations(_game->getRuleset()))
+				{
+					_soldiersMedalled.push_back(soldier);
+				}
+			}
+		}
+		if (!_soldiersMedalled.empty())
+		{
+			_game->pushState(new CommendationState(_soldiersMedalled));
+		}
 		if (_psi)
 		{
 			_game->pushState(new PsiTrainingState);
@@ -283,7 +301,6 @@ void MonthlyReportState::btnOkClick(Action *)
 		}
 	}
 }
-
 /**
  * Update all our activity counters, gather all our scores,
  * get our countries to make sign pacts, adjust their fundings,
@@ -301,7 +318,6 @@ void MonthlyReportState::calculateChanges()
 	int lastMonthOffset = _game->getSavedGame()->getFundsList().size() - 3;
 	if (lastMonthOffset < 0)
 		lastMonthOffset += 2;
-
 	// update activity meters, calculate a total score based on regional activity
 	// and gather last month's score
 	for (std::vector<Region*>::iterator k = _game->getSavedGame()->getRegions()->begin(); k != _game->getSavedGame()->getRegions()->end(); ++k)
@@ -312,7 +328,6 @@ void MonthlyReportState::calculateChanges()
 		xcomSubTotal += (*k)->getActivityXcom().at(monthOffset);
 		alienTotal += (*k)->getActivityAlien().at(monthOffset);
 	}
-
 	// apply research bonus AFTER calculating our total, because this bonus applies to the council ONLY,
 	// and shouldn't influence each country's decision.
 
@@ -325,8 +340,6 @@ void MonthlyReportState::calculateChanges()
 
 	if (_game->getSavedGame()->getResearchScores().size() > 2)
 		_lastMonthsRating += _game->getSavedGame()->getResearchScores().at(lastMonthOffset);
-
-
 	// now that we have our totals we can send the relevant info to the countries
 	// and have them make their decisions weighted on the council's perspective.
 	for (std::vector<Country*>::iterator k = _game->getSavedGame()->getCountries()->begin(); k != _game->getSavedGame()->getCountries()->end(); ++k)
@@ -339,11 +352,9 @@ void MonthlyReportState::calculateChanges()
 		{
 			_pactList.push_back((*k)->getRules()->getType());
 		}
-
 		// determine satisfaction level, sign pacts, adjust funding
 		// and update activity meters,
 		(*k)->newMonth(xcomTotal, alienTotal);
-
 		// and after they've made their decisions, calculate the difference, and add
 		// them to the appropriate lists.
 		_fundingDiff += (*k)->getFunding().back()-(*k)->getFunding().at((*k)->getFunding().size()-2);
@@ -359,11 +370,9 @@ void MonthlyReportState::calculateChanges()
 			break;
 		}
 	}
-
 	//calculate total.
 	_ratingTotal = xcomTotal - alienTotal;
 }
-
 /**
  * Builds a sentence from a list of countries, adding the appropriate
  * separators and pluralization.
@@ -395,5 +404,4 @@ std::wstring MonthlyReportState::countryList(const std::vector<std::string> &cou
 	}
 	return ss.str();
 }
-
 }
