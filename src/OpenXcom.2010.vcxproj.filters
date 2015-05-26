@@ -921,8 +921,6 @@
     <ClCompile Include="Basescape\SoldierDiaryPerformanceState.cpp" />
     <ClCompile Include="Battlescape\CommendationState.cpp" />
     <ClCompile Include="Ruleset\RuleCommendations.cpp" />
-    <ClCompile Include="Ruleset\StatString.cpp" />
-    <ClCompile Include="Ruleset\StatStringCondition.cpp" />
     <ClCompile Include="Savegame\SoldierDiary.cpp" />
     <ClCompile Include="Battlescape\CommendationLateState.cpp" />
     <ClCompile Include="Ruleset\Texture.cpp">
@@ -934,8 +932,6 @@
     <ClCompile Include="Battlescape\PsiAttackBState.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
-    <ClCompile Include="Ruleset\StatString.cpp" />
-    <ClCompile Include="Ruleset\StatStringCondition.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
