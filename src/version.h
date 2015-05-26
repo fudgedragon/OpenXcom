@@ -24,7 +24,7 @@
 #define OPENXCOM_VERSION_NUMBER 1,0,0,0
 
 #ifndef OPENXCOM_VERSION_GIT
-#define OPENXCOM_VERSION_GIT ""
+#define OPENXCOM_VERSION_GIT " Soldier Diaries Legacy 2015-04-30 06:20"
 #endif
 
 #endif
