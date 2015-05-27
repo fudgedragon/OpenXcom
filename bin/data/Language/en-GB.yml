@@ -1395,3 +1395,5 @@ en-GB:
   STR_NO_MORE_EQUIPMENT_ALLOWED:
     one: "NO MORE EQUIPMENT ALLOWED ON BOARD!{SMALLLINE}You are only allowed to take a maximum of {N} item of equipment on this craft."
     other: "NO MORE EQUIPMENT ALLOWED ON BOARD!{SMALLLINE}You are only allowed to take a maximum of {N} items of equipment on this craft."
+  STR_FAIRPSIONICS: "Fair Psionics"
+  STR_FAIRPSIONICS_DESC: "Forces aliens to use the same rules for Psionics as XCOM.{NEWLINE}Only soldiers that have been seen by an alien during their turn are a valid target."
