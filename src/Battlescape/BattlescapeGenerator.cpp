@@ -1016,6 +1016,12 @@ BattleUnit *BattlescapeGenerator::addAlien(Unit *rules, int alienRank, bool outs
 			unit->halveArmor();
 		}
 
+		if  (Options::reducedFirstTurnReactions)
+		{
+			//Reduces available AI TUS on generation to 20-70% + 5% per difficulty level leading to 25-75% on beginner & 45-95% on superhuman
+			unit->setTimeUnits(unit->getBaseStats()->tu * (RNG::generate(0.20, 0.70) + (0.05 * difficulty)));
+		}
+
 		// we only add a unit if it has a node to spawn on.
 		// (stops them spawning at 0,0,0)
 		_save->getUnits()->push_back(unit);
@@ -1038,7 +1044,13 @@ BattleUnit *BattlescapeGenerator::addAlien(Unit *rules, int alienRank, bool outs
 			else
 				unit->setDirection(RNG::generate(0,7));
 
-			_save->getUnits()->push_back(unit);
+			if  (Options::reducedFirstTurnReactions)
+			{
+				//Reduces available AI TUS on generation to 20-70% + 5% per difficulty level leading to 25-75% on beginner & 45-95% on superhuman
+				unit->setTimeUnits(unit->getBaseStats()->tu * (RNG::generate(0.20, 0.70) + (0.05 * difficulty)));
+			}
+
+			_save->getUnits()->push_back(unit);					
 		}
 		else
 		{
