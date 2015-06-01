@@ -454,8 +454,6 @@
     <ClCompile Include="Ruleset\RuleMusic.cpp" />
     <ClCompile Include="Ruleset\RuleVideo.cpp" />
     <ClCompile Include="Ruleset\SoundDefinition.cpp" />
-    <ClCompile Include="Ruleset\StatString.cpp" />
-    <ClCompile Include="Ruleset\StatStringCondition.cpp" />
     <ClCompile Include="Ruleset\RuleInterface.cpp" />
     <ClCompile Include="Ruleset\Unit.cpp" />
     <ClCompile Include="Ruleset\Armor.cpp" />
