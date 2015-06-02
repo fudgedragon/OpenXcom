@@ -1111,6 +1111,7 @@ Music *XcomResourcePack::loadMusic(MusicFormat fmt, const std::string &file, int
 			// DOS MIDI
 			if (gmcat && track < gmcat->getAmount())
 			{
+				gmcat->outputMIDI(track, "SOUND/" + file);
 				music = gmcat->loadMIDI(track);
 			}
 			// Windows MIDI

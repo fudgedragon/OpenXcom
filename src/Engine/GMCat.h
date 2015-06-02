@@ -38,6 +38,8 @@ public:
 	GMCatFile(const char *path) : CatFile(path) { }
 	/// Loads a stream as a MIDI file.
 	Music *loadMIDI(unsigned int i);
+	/// Outputs a stream to the resources directory.
+	bool outputMIDI(unsigned int i, const std::string fileName);
 };
 
 }

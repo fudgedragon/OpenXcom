@@ -19,6 +19,8 @@
 
 #include "GMCat.h"
 #include <vector>
+#include <iostream>
+#include <fstream>
 #include "Music.h"
 
 namespace OpenXcom
@@ -385,6 +387,38 @@ Music *GMCatFile::loadMIDI(unsigned int i)
 	music->load(&midi[0], midi.size());
 
 	return music;
+}
+
+bool GMCatFile::outputMIDI(unsigned int i, const std::string fileName)
+{
+	unsigned char *raw = static_cast<unsigned char*> ((void*)load(i));
+
+	if (!raw)
+		return false;
+
+	// stream info
+	struct gmstream stream;
+	if (gmext_read_stream(&stream, getObjectSize(i), raw) == -1) {
+		delete[] raw;
+		return false;
+	}
+
+	std::vector<unsigned char> midi;
+	midi.reserve(65536);
+
+	// fields in stream still point into raw
+	if (gmext_write_midi(&stream, midi) == -1) {
+		delete[] raw;
+		return false;
+	}
+
+	delete[] raw;
+
+	std::ofstream midiFile;
+	midiFile.open(fileName.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
+	if (midiFile.is_open()) {midiFile.write(reinterpret_cast<char*> (&midi[0]), midi.size());}
+	midiFile.close();
+	return true;
 }
 
 }
