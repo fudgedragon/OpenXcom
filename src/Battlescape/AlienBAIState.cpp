@@ -1858,27 +1858,65 @@ bool AlienBAIState::psiAction()
 		int psiAttackStrength = _unit->getBaseStats()->psiSkill * _unit->getBaseStats()->psiStrength / 50;
 		int chanceToAttack = 0;
 
-		for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
+		//Create a list of valid targets for psionics
+		std::map<int, BattleUnit*> PsiTargets;
+		//Check if line of sight required first, if true the other two become irrelevent, as only units visible to this one matter, and we have a list for that.
+		if (LOSRequired)
 		{
-			// don't target tanks
-			if ((*i)->getArmor()->getSize() == 1 &&
-				validTarget(*i, true, false) &&
-				// they must be player units
-				(*i)->getOriginalFaction() == FACTION_PLAYER &&
-				(!LOSRequired ||
-				std::find(_unit->getVisibleUnits()->begin(), _unit->getVisibleUnits()->end(), *i) != _unit->getVisibleUnits()->end()))
+			for (std::vector<BattleUnit*>::const_iterator i = _unit->getVisibleUnits()->begin(); i != _unit->getVisibleUnits()->end(); ++i)
 			{
-				int chanceToAttackMe = psiAttackStrength
-					+ (((*i)->getBaseStats()->psiSkill > 0) ? (*i)->getBaseStats()->psiSkill * -0.4 : 0)
-					- _save->getTileEngine()->distance((*i)->getPosition(), _unit->getPosition())
-					- ((*i)->getBaseStats()->psiStrength)
-					+ RNG::generate(55, 105);
-
-				if (chanceToAttackMe > chanceToAttack)
+					//If we check these conditions now we potentialy reduce the number of things we iterate later
+					if ((*i)->getArmor()->getSize() == 1 && validTarget(*i, true, false) && (*i)->getOriginalFaction() == FACTION_PLAYER)
+					{
+						PsiTargets[(*i)->getId()] = *i;
+					}
+			}
+		}
+		//Otherwise start iterating over the entire units collection.
+		else
+		{
+			for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
+			{
+				//If fair psionics is switched on
+				if (Options::fairPsionics)
 				{
-					chanceToAttack = chanceToAttackMe;
-					_aggroTarget = *i;
+					//we care about FACTION_HOSTILE units only
+					if ((*i)->getFaction() == FACTION_HOSTILE)
+					{
+						//iterate through each units list of units spotted during its turn
+						for (std::vector<BattleUnit*>::const_iterator j = (*i)->getUnitsSpottedThisTurn().begin(); j != (*i)->getUnitsSpottedThisTurn().end(); ++j)
+						{
+							//checking these now so we dont have to later
+							if ((*j)->getArmor()->getSize() == 1 && validTarget(*j, true, false) && (*j)->getOriginalFaction() == FACTION_PLAYER)
+							{
+								PsiTargets[(*j)->getId()] = *j;
+							}
+						}
+					}
 				}
+				else
+				{
+					//Otherwise just check our standard conditions
+					if ((*i)->getArmor()->getSize() == 1 && validTarget(*i, true, false) && (*i)->getOriginalFaction() == FACTION_PLAYER)
+					{
+						PsiTargets[(*i)->getId()] = *i;
+					}
+				}
+			}
+		}
+		//Then we iterate through everything we selected in the last stage and evalutate psi odds
+		for (std::map<int, BattleUnit*>::const_iterator i = PsiTargets.begin(); i != PsiTargets.end(); ++i)
+		{
+			int chanceToAttackMe = psiAttackStrength
+				+ (((*i).second->getBaseStats()->psiSkill > 0) ? (*i).second->getBaseStats()->psiSkill * -0.4 : 0)
+				- _save->getTileEngine()->distance((*i).second->getPosition(), _unit->getPosition())
+				- ((*i).second->getBaseStats()->psiStrength)
+				+ RNG::generate(55, 105);
+
+			if (chanceToAttackMe > chanceToAttack)
+			{
+				chanceToAttack = chanceToAttackMe;
+				_aggroTarget = (*i).second;
 			}
 		}
 
