@@ -193,7 +193,7 @@ void CraftInfoState::init()
 	ss << tr("STR_DAMAGE_UC_").arg(Text::formatPercentage(_craft->getDamagePercentage()));
 	if (_craft->getStatus() == "STR_REPAIRS" && _craft->getDamage() > 0)
 	{
-		int damageHours = (int)ceil((double)_craft->getDamage() / _craft->getRules()->getRepairRate());
+    int damageHours = _craft->calcRepairTime();
 		ss << formatTime(damageHours);
 	}
 	_txtDamage->setText(ss.str());
@@ -202,7 +202,7 @@ void CraftInfoState::init()
 	ss2 << tr("STR_FUEL").arg(Text::formatPercentage(_craft->getFuelPercentage()));
 	if (_craft->getStatus() == "STR_REFUELLING" && _craft->getFuelMax() - _craft->getFuel() > 0)
 	{
-		int fuelHours = (int)ceil((double)(_craft->getFuelMax() - _craft->getFuel()) / _craft->getRules()->getRefuelRate() / 2.0);
+		int fuelHours = _craft->calcRefuelTime();
 		ss2 << formatTime(fuelHours);
 	}
 	_txtFuel->setText(ss2.str());
