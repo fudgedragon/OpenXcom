@@ -514,7 +514,7 @@ bool SoldierDiary::manageCommendations(Ruleset *rules)
 									((*singleKill)->rank != (*detail) && (*singleKill)->race != (*detail) &&
 									 (*singleKill)->weapon != (*detail) && (*singleKill)->weaponAmmo != (*detail) &&
 									 (*singleKill)->getUnitStatusString() != (*detail) && (*singleKill)->getUnitFactionString() != (*detail)  &&
-									 rules->getItem((*singleKill)->weaponAmmo)->getDamageType() != damageType && 
+									 rules->getItem((*singleKill)->weaponAmmo)->getDamageType()->ResistType != damageType && 
 									 rules->getItem((*singleKill)->weapon)->getBattleType() != battleType &&
                                      (*singleKill)->getUnitSideString() != (*detail) && (*singleKill)->getUnitBodyPartString() != (*detail)) )
                                 {

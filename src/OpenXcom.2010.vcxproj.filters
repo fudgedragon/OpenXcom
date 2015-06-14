@@ -164,6 +164,9 @@
     <ClCompile Include="Ruleset\RuleCraftWeapon.cpp">
       <Filter>Ruleset</Filter>
     </ClCompile>
+    <ClCompile Include="Ruleset\RuleDamageType.cpp">
+      <Filter>Ruleset</Filter>
+    </ClCompile>
     <ClCompile Include="Ruleset\RuleItem.cpp">
       <Filter>Ruleset</Filter>
     </ClCompile>
@@ -952,10 +955,13 @@
     <ClCompile Include="Battlescape\PsiAttackBState.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
-    <ClCompile Include="Ruleset\StatString.cpp">
-      <Filter>Ruleset</Filter>
+    <ClCompile Include="Geoscape\TrainingState.cpp">
+      <Filter>Geoscape</Filter>
     </ClCompile>
-    <ClCompile Include="Ruleset\StatStringCondition.cpp">
+    <ClCompile Include="Geoscape\AllocateTrainingState.cpp">
+      <Filter>Geoscape</Filter>
+    </ClCompile>
+    <ClCompile Include="Ruleset\RuleStatBonus.cpp">
       <Filter>Ruleset</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1127,6 +1133,9 @@
       <Filter>Ruleset</Filter>
     </ClInclude>
     <ClInclude Include="Ruleset\RuleCraftWeapon.h">
+      <Filter>Ruleset</Filter>
+    </ClInclude>
+    <ClInclude Include="Ruleset\RuleDamageType.h">
       <Filter>Ruleset</Filter>
     </ClInclude>
     <ClInclude Include="Ruleset\RuleItem.h">
@@ -1931,6 +1940,15 @@
     </ClInclude>
     <ClInclude Include="Battlescape\PsiAttackBState.h">
       <Filter>Battlescape</Filter>
+    </ClInclude>
+    <ClInclude Include="Geoscape\TrainingState.h">
+      <Filter>Geoscape</Filter>
+    </ClInclude>
+    <ClInclude Include="Geoscape\AllocateTrainingState.h">
+      <Filter>Geoscape</Filter>
+    </ClInclude>
+    <ClInclude Include="Ruleset\RuleStatBonus.h">
+      <Filter>Ruleset</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

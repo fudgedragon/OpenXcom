@@ -220,7 +220,8 @@ void MedikitState::onHealClick(Action *)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits (rule->getTUUse()))
+	BattleActionCost cost(BA_USE, _unit, _item);
+	if (cost.spendTU(&_action->result))
 	{
 		_targetUnit->heal(_medikitView->getSelectedPart(), rule->getWoundRecovery(), rule->getHealthRecovery());
 		_item->setHealQuantity(--heal);
@@ -237,7 +238,6 @@ void MedikitState::onHealClick(Action *)
 	}
 	else
 	{
-		_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
 		onEndClick(0);
 	}
 }
@@ -254,7 +254,8 @@ void MedikitState::onStimulantClick(Action *)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits (rule->getTUUse()))
+	BattleActionCost cost(BA_USE, _unit, _item);
+	if (cost.spendTU(&_action->result))
 	{
 		_targetUnit->stimulant(rule->getEnergyRecovery(), rule->getStunRecovery());
 		_item->setStimulantQuantity(--stimulant);
@@ -270,7 +271,6 @@ void MedikitState::onStimulantClick(Action *)
 	}
 	else
 	{
-		_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
 		onEndClick(0);
 	}
 }
@@ -287,16 +287,16 @@ void MedikitState::onPainKillerClick(Action *)
 	{
 		return;
 	}
-	if (_unit->spendTimeUnits (rule->getTUUse()))
+	BattleActionCost cost(BA_USE, _unit, _item);
+	if (cost.spendTU(&_action->result))
 	{
-		_targetUnit->painKillers();
+		_targetUnit->painKillers(rule->getMoraleRecovery(), rule->getPainKillerRecovery());
 		_item->setPainKillerQuantity(--pk);
 		_action->actor->getStatistics()->appliedPainKill++;
 		update();
 	}
 	else
 	{
-		_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
 		onEndClick(0);
 	}
 }

@@ -20,6 +20,7 @@
 #define OPENXCOM_BATTLESCAPEGAME_H
 
 #include "Position.h"
+#include "../Ruleset/RuleItem.h"
 #include <SDL.h>
 #include <string>
 #include <list>
@@ -43,14 +44,32 @@ class SoldierDiary;
 
 enum BattleActionType { BA_NONE, BA_TURN, BA_WALK, BA_PRIME, BA_THROW, BA_AUTOSHOT, BA_SNAPSHOT, BA_AIMEDSHOT, BA_HIT, BA_USE, BA_LAUNCH, BA_MINDCONTROL, BA_PANIC, BA_RETHINK };
 
-struct BattleAction
+struct BattleActionCost : RuleItemUseCost
 {
 	BattleActionType type;
 	BattleUnit *actor;
 	BattleItem *weapon;
+
+	//Default constructor.
+	BattleActionCost() : type(BA_NONE), actor(0), weapon(0) { }
+
+	//Constructor with update.
+	BattleActionCost(BattleActionType action, BattleUnit *unit, BattleItem *item) : type(action), actor(unit), weapon(item) { updateTU(); }
+
+	/// Update value of TU based of actor, weapon and type.
+	void updateTU();
+	/// Set TU to zero.
+	void clearTU();
+	/// Test if actor have enough TU to perform weapon action.
+	bool haveTU(std::string *message = 0);
+	/// Spend TU when actor have enough TU.
+	bool spendTU(std::string *message = 0);
+};
+
+struct BattleAction : BattleActionCost
+{
 	Position target;
 	std::list<Position> waypoints;
-	int TU;
 	bool targeting;
 	int value;
 	std::string result;
@@ -62,7 +81,9 @@ struct BattleAction
 	int finalFacing;
 	bool finalAction;
     int number; // first action of turn, second, etc.?
-	BattleAction() : type(BA_NONE), actor(0), weapon(0), TU(0), targeting(false), value(0), strafe(false), run(false), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0) { }
+
+	//Default constructor
+	BattleAction() : targeting(false), value(0), strafe(false), run(false), diff(0), autoShotCounter(0), cameraPosition(0, 0, -1), desperate(false), finalFacing(-1), finalAction(false), number(0) { }
 };
 
 /**
@@ -123,8 +144,8 @@ public:
 	void checkForCasualties(BattleItem *murderweapon, BattleUnit *murderer, bool hiddenExplosion = false, bool terrainExplosion = false);
 	/// Checks if a unit panics.
 	void checkForPanic(BattleUnit *unit);
-	/// Checks reserved tu.
-	bool checkReservedTU(BattleUnit *bu, int tu, bool justChecking = false);
+	/// Checks reserved tu and energy.
+	bool checkReservedTU(BattleUnit *bu, int tu, int energy, bool justChecking = false);
 	/// Handles unit AI.
 	void handleAI(BattleUnit *unit);
 	/// Drops an item and affects it with gravity.
@@ -147,6 +168,8 @@ public:
 	void launchAction();
 	/// Handler for the psi button.
 	void psiButtonAction();
+	/// Handle psi attack.
+	bool psiAttack(BattleAction *action);
 	/// Moves a unit up or down.
 	void moveUpDown(BattleUnit *unit, int dir);
 	/// Requests the end of the turn (wait for explosions etc to really end the turn).

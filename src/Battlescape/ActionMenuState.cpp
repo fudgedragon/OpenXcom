@@ -69,14 +69,18 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	RuleItem *weapon = _action->weapon->getRules();
 
 	// throwing (if not a fixed weapon)
-	if (!weapon->isFixed())
+	if (!weapon->isFixed() && weapon->getCostThrow().Time > 0)
 	{
 		addItem(BA_THROW, "STR_THROW", &id);
 	}
 
+	if (weapon->isPsiRequired() && _action->actor->getBaseStats()->psiSkill <= 0)
+	{
+		return;
+	}
+
 	// priming
-	if ((weapon->getBattleType() == BT_GRENADE || weapon->getBattleType() == BT_PROXIMITYGRENADE)
-		&& _action->weapon->getFuseTimer() == -1)
+	if (weapon->getFuseTimerDefault() >= 0 && _action->weapon->getFuseTimer() == -1)
 	{
 		addItem(BA_PRIME, "STR_PRIME_GRENADE", &id);
 	}
@@ -89,25 +93,25 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 		}
 		else
 		{
-			if (weapon->getAccuracyAuto() != 0)
+			if (weapon->getCostAuto().Time > 0)
 			{
 				addItem(BA_AUTOSHOT, "STR_AUTO_SHOT", &id);
 			}
-			if (weapon->getAccuracySnap() != 0)
+			if (weapon->getCostSnap().Time > 0)
 			{
 				addItem(BA_SNAPSHOT, "STR_SNAP_SHOT", &id);
 			}
-			if (weapon->getAccuracyAimed() != 0)
+			if (weapon->getCostAimed().Time > 0)
 			{
 				addItem(BA_AIMEDSHOT, "STR_AIMED_SHOT", &id);
 			}
 		}
 	}
 
-	if (weapon->getTUMelee())
+	if (weapon->getCostMelee().Time > 0)
 	{
 		// stun rod
-		if (weapon->getBattleType() == BT_MELEE && weapon->getDamageType() == DT_STUN)
+		if (weapon->getBattleType() == BT_MELEE && weapon->getDamageType()->ResistType == DT_STUN)
 		{
 			addItem(BA_HIT, "STR_STUN", &id);
 		}
@@ -117,8 +121,9 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 			addItem(BA_HIT, "STR_HIT_MELEE", &id);
 		}
 	}
+
 	// special items
-	else if (weapon->getBattleType() == BT_MEDIKIT)
+	if (weapon->getBattleType() == BT_MEDIKIT)
 	{
 		addItem(BA_USE, "STR_USE_MEDI_KIT", &id);
 	}
@@ -126,10 +131,20 @@ ActionMenuState::ActionMenuState(BattleAction *action, int x, int y) : _action(a
 	{
 		addItem(BA_USE, "STR_USE_SCANNER", &id);
 	}
-	else if (weapon->getBattleType() == BT_PSIAMP && _action->actor->getBaseStats()->psiSkill > 0)
+	else if (weapon->getBattleType() == BT_PSIAMP)
 	{
-		addItem(BA_MINDCONTROL, "STR_MIND_CONTROL", &id);
-		addItem(BA_PANIC, "STR_PANIC_UNIT", &id);
+		if (weapon->getCostMind().Time > 0)
+		{
+			addItem(BA_MINDCONTROL, "STR_MIND_CONTROL", &id);
+		}
+		if (weapon->getCostPanic().Time > 0)
+		{
+			addItem(BA_PANIC, "STR_PANIC_UNIT", &id);
+		}
+		if (weapon->getCostUse().Time > 0)
+		{
+			addItem(BA_USE, weapon->getPsiAttackName(), &id);
+		}
 	}
 	else if (weapon->getBattleType() == BT_MINDPROBE)
 	{
@@ -156,9 +171,7 @@ void ActionMenuState::addItem(BattleActionType ba, const std::string &name, int 
 {
 	std::wstring s1, s2;
 	int acc = _action->actor->getFiringAccuracy(ba, _action->weapon);
-	if (ba == BA_THROW)
-		acc = (int)(_action->actor->getThrowingAccuracy());
-	int tu = _action->actor->getActionTUs(ba, _action->weapon);
+	int tu = _action->actor->getActionTUs(ba, _action->weapon).Time;
 
 	if (ba == BA_THROW || ba == BA_AIMEDSHOT || ba == BA_SNAPSHOT || ba == BA_AUTOSHOT || ba == BA_LAUNCH || ba == BA_HIT)
 		s1 = tr("STR_ACCURACY_SHORT").arg(Text::formatPercentage(acc));
@@ -211,7 +224,7 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 	if (btnID != -1)
 	{
 		_action->type = _actionMenu[btnID]->getAction();
-		_action->TU = _actionMenu[btnID]->getTUs();
+		_action->updateTU();
 		if (weapon->isWaterOnly() &&
 			_game->getSavedGame()->getSavedBattle()->getDepth() == 0 &&
 			_action->type != BA_THROW)
@@ -221,20 +234,21 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 		}
 		else if (_action->type == BA_PRIME)
 		{
-			if (weapon->getBattleType() == BT_PROXIMITYGRENADE)
+			const BattleFuseType fuseType = weapon->getFuseTimerType();
+			if (fuseType == BFT_SET)
 			{
-				_action->value = 0;
-				_game->popState();
+				_game->pushState(new PrimeGrenadeState(_action, false, 0));
 			}
 			else
 			{
-				_game->pushState(new PrimeGrenadeState(_action, false, 0));
+				_action->value = weapon->getFuseTimerDefault();
+				_game->popState();
 			}
 		}
 		else if (_action->type == BA_USE && weapon->getBattleType() == BT_MEDIKIT)
 		{
-			BattleUnit *targetUnit = NULL;
-			std::vector<BattleUnit*> *const units (_game->getSavedGame()->getSavedBattle()->getUnits());
+			BattleUnit *targetUnit = 0;
+			const std::vector<BattleUnit*> *units = _game->getSavedGame()->getSavedBattle()->getUnits();
 			for (std::vector<BattleUnit*>::const_iterator i = units->begin(); i != units->end() && !targetUnit; ++i)
 			{
 				// we can heal a unit that is at the same position, unconscious and healable(=woundable)
@@ -258,6 +272,10 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 					}
 				}
 			}
+			if (!targetUnit && weapon->getAllowSelfHeal())
+			{
+				targetUnit = _action->actor;
+			}
 			if (targetUnit)
 			{
 				_game->popState();
@@ -272,23 +290,22 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 		else if (_action->type == BA_USE && weapon->getBattleType() == BT_SCANNER)
 		{
 			// spend TUs first, then show the scanner
-			if (_action->actor->spendTimeUnits (_action->TU))
+			if (_action->spendTU(&_action->result))
 			{
 				_game->popState();
 				_game->pushState (new ScannerState(_action));
 			}
 			else
 			{
-				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
 				_game->popState();
 			}
 		}
 		else if (_action->type == BA_LAUNCH)
 		{
 			// check beforehand if we have enough time units
-			if (_action->TU > _action->actor->getTimeUnits())
+			if (!_action->haveTU(&_action->result))
 			{
-				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
+				//nothing
 			}
 			else if (_action->weapon->getAmmoItem() ==0 || (_action->weapon->getAmmoItem() && _action->weapon->getAmmoItem()->getAmmoQuantity() == 0))
 			{
@@ -303,9 +320,9 @@ void ActionMenuState::btnActionMenuItemClick(Action *action)
 		else if (_action->type == BA_HIT)
 		{
 			// check beforehand if we have enough time units
-			if (_action->TU > _action->actor->getTimeUnits())
+			if (!_action->haveTU(&_action->result))
 			{
-				_action->result = "STR_NOT_ENOUGH_TIME_UNITS";
+				//nothing
 			}
 			else if (!_game->getSavedGame()->getSavedBattle()->getTileEngine()->validMeleeRange(
 				_action->actor->getPosition(),

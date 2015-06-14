@@ -25,6 +25,7 @@
 #include "../Battlescape/BattlescapeGame.h"
 #include "../Ruleset/RuleItem.h"
 #include "../Ruleset/Unit.h"
+#include "../Ruleset/Armor.h"
 #include "../Ruleset/MapData.h"
 #include "Soldier.h"
 #include "BattleItem.h"
@@ -41,7 +42,6 @@ class Node;
 class Surface;
 class RuleInventory;
 class Soldier;
-class Armor;
 class SavedGame;
 class Language;
 class AlienBAIState;
@@ -49,7 +49,6 @@ class CivilianBAIState;
 
 enum UnitStatus {STATUS_STANDING, STATUS_WALKING, STATUS_FLYING, STATUS_TURNING, STATUS_AIMING, STATUS_COLLAPSING, STATUS_DEAD, STATUS_UNCONSCIOUS, STATUS_PANICKING, STATUS_BERSERK, STATUS_TIME_OUT};
 enum UnitFaction {FACTION_PLAYER, FACTION_HOSTILE, FACTION_NEUTRAL};
-enum UnitSide {SIDE_FRONT, SIDE_LEFT, SIDE_RIGHT, SIDE_REAR, SIDE_UNDER};
 enum UnitBodyPart {BODYPART_HEAD, BODYPART_TORSO, BODYPART_RIGHTARM, BODYPART_LEFTARM, BODYPART_RIGHTLEG, BODYPART_LEFTLEG};
 
 /**
@@ -305,6 +304,8 @@ private:
 	int _kills;
 	int _faceDirection; // used only during strafeing moves
 	bool _hitByFire;
+	int _fireMaxHit;
+	int _smokeMaxHit;
 	int _moraleRestored;
 	int _coverReserve;
 	BattleUnit *_charging;
@@ -324,7 +325,7 @@ private:
 	UnitStats _stats;
 	int _standHeight, _kneelHeight, _floatHeight;
 	int _value, _deathSound, _aggroSound, _moveSound;
-	int _intelligence, _aggression;
+	int _intelligence, _aggression, _maxViewDistanceAtDarkSq;
 	SpecialAbility _specab;
 	Armor *_armor;
 	SoldierGender _gender;
@@ -361,6 +362,8 @@ public:
 	const Position& getPosition() const;
 	/// Gets the unit's position.
 	const Position& getLastPosition() const;
+	/// Gets the unit's position of center in vexels.
+	Position getPositionVexels() const;
 	/// Sets the unit's direction 0-7.
 	void setDirection(int direction);
 	/// Sets the unit's face direction (only used by strafing moves)
@@ -423,8 +426,10 @@ public:
 	int getHealth() const;
 	/// Gets the unit's bravery.
 	int getMorale() const;
+	/// Get overkill damage to unit.
+	int getOverKillDamage() const;
 	/// Do damage to the unit.
-	int damage(const Position &relative, int power, ItemDamageType type, bool ignoreArmor = false);
+	int damage(const Position &relative, int power, const RuleDamageType *type);
 	/// Heal stun level of the unit.
 	void healStun(int power);
 	/// Gets the unit's stun level.
@@ -440,12 +445,15 @@ public:
 	/// The unit is out - either dead or unconscious.
 	bool isOut() const;
 	/// Get the number of time units a certain action takes.
-	int getActionTUs(BattleActionType actionType, BattleItem *item);
-	int getActionTUs(BattleActionType actionType, RuleItem *item);
+	RuleItemUseCost getActionTUs(BattleActionType actionType, BattleItem *item) const;
+	/// Get the number of time units a certain action takes.
+	RuleItemUseCost getActionTUs(BattleActionType actionType, RuleItem *item) const;
 	/// Spend time units if it can.
 	bool spendTimeUnits(int tu);
 	/// Spend energy if it can.
-	bool spendEnergy(int tu);
+	bool spendEnergy(int energy);
+	/// Force to spend resources cost without checking.
+	void spendCost(const RuleItemUseCost& cost);
 	/// Set time units.
 	void setTimeUnits(int tu);
 	/// Add unit to visible units.
@@ -460,12 +468,12 @@ public:
 	std::vector<Tile*> *getVisibleTiles();
 	/// Clear visible tiles.
 	void clearVisibleTiles();
+	/// Calculate psi attack accuracy.
+	int getPsiAccuracy(BattleActionType actionType, BattleItem *item);
 	/// Calculate firing accuracy.
 	int getFiringAccuracy(BattleActionType actionType, BattleItem *item);
 	/// Calculate accuracy modifier.
 	int getAccuracyModifier(BattleItem *item = 0);
-	/// Calculate throwing accuracy.
-	double getThrowingAccuracy();
 	/// Set armor value.
 	void setArmor(int armor, UnitSide side);
 	/// Get armor value.
@@ -547,7 +555,7 @@ public:
 	/// Heal one fatal wound
 	void heal(int part, int woundAmount, int healthAmount);
 	/// Give pain killers to this unit
-	void painKillers();
+	void painKillers(int moraleAmount, float painKillersStrength);
 	/// Give stimulant to this unit
 	void stimulant (int energy, int stun);
 	/// Get motion points for the motion scanner.
@@ -558,6 +566,8 @@ public:
 	std::wstring getName(Language *lang, bool debugAppendId = false) const;
 	/// Gets the unit's stats.
 	UnitStats *getBaseStats();
+	/// Gets the unit's stats.
+	const UnitStats *getBaseStats() const;
 	/// Get the unit's stand height.
 	int getStandHeight() const;
 	/// Get the unit's kneel height.
@@ -578,6 +588,8 @@ public:
 	int getIntelligence() const;
 	/// Get the unit's aggression.
 	int getAggression() const;
+	/// Get square of maximum view distance at dark.
+	inline int getMaxViewDistanceAtDarkSq() const {return _maxViewDistanceAtDarkSq;}
 	/// Get the units's special ability.
 	int getSpecialAbility() const;
 	/// Set the units's respawn flag.
@@ -628,9 +640,8 @@ public:
 	UnitFaction getOriginalFaction() const;
 	/// call this after the default copy constructor deletes the cache?
 	void invalidateCache();
-
+	/// Get alien/HWP unit.
 	Unit *getUnitRules() const { return _unitRules; }
-
 	Position lastCover;
 	/// get the vector of units we've seen this turn.
 	std::vector<BattleUnit *> &getUnitsSpottedThisTurn();
@@ -662,20 +673,27 @@ public:
 	void setFloorAbove(bool floor);
 	/// Get the flag for "floor above me".
 	bool getFloorAbove();
-	/// Get any melee weapon we may be carrying, or a built in one.
-	BattleItem *getMeleeWeapon();
+	/// Get any utility weapon we may be carrying, or a built in one.
+	BattleItem *getUtilityWeapon(BattleType type);
+	/// Set fire damage form environment.
+	void setEnviFire(int damage);
+	/// Set smoke damage form environment.
+	void setEnviSmoke(int damage);
+	/// Calculate smoke and fire damage form environment.
+	void calculateEnviDamage(Ruleset *ruleset);
 	/// Use this function to check the unit's movement type.
 	MovementType getMovementType() const;
+	/// Create special weapon for unit.
+	void setSpecialWeapon(SavedBattleGame *save);
+	/// Get special weapon.
+	BattleItem *getSpecialWeapon(BattleType type) const;
 	/// Checks if this unit is in hiding for a turn.
 	bool isHiding() {return _hidingForTurn; };
 	/// Sets this unit is in hiding for a turn (or not).
 	void setHiding(bool hiding) { _hidingForTurn = hiding; };
 	/// Puts the unit in the corner to think about what he's done.
 	void goToTimeOut();
-	/// Create special weapon for unit.
-	void setSpecialWeapon(SavedBattleGame *save, const Ruleset *rule);
-	/// Get special weapon.
-	BattleItem *getSpecialWeapon(BattleType type) const;
+
     /// Get the unit's mission statistics.
     BattleUnitStatistics* getStatistics();
 	/// Set the unit murderer's id.
