@@ -1885,17 +1885,64 @@ bool AlienBAIState::psiAction()
 		int weightToAttack = 0;
 		BattleActionType typeToAttack = BA_NONE;
 
-		for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
+		//Create a list of valid targets for psionics
+		std::map<int, BattleUnit*> PsiTargets;
+		//Check if line of sight required first, if true the other two become irrelevent, as only units visible to this one matter, and we have a list for that.
+		if (LOSRequired)
+		{
+			for (std::vector<BattleUnit*>::const_iterator i = _unit->getVisibleUnits()->begin(); i != _unit->getVisibleUnits()->end(); ++i)
+			{
+					//If we check these conditions now we potentialy reduce the number of things we iterate later
+					if ((*i)->getArmor()->getSize() == 1 && validTarget(*i, true, false) && (*i)->getOriginalFaction() == FACTION_PLAYER)
+					{
+						PsiTargets[(*i)->getId()] = *i;
+					}
+			}
+		}
+		//Otherwise start iterating over the entire units collection.
+		else
+		{
+			for (std::vector<BattleUnit*>::const_iterator i = _save->getUnits()->begin(); i != _save->getUnits()->end(); ++i)
+			{
+				//If fair psionics is switched on
+				if (Options::fairPsionics)
+				{
+					//we care about FACTION_HOSTILE units only
+					if ((*i)->getFaction() == FACTION_HOSTILE)
+					{
+						//iterate through each units list of units spotted during its turn
+						for (std::vector<BattleUnit*>::const_iterator j = (*i)->getUnitsSpottedThisTurn().begin(); j != (*i)->getUnitsSpottedThisTurn().end(); ++j)
+						{
+							//checking these now so we dont have to later
+							if ((*j)->getArmor()->getSize() == 1 && validTarget(*j, true, false) && (*j)->getOriginalFaction() == FACTION_PLAYER)
+							{
+								PsiTargets[(*j)->getId()] = *j;
+							}
+						}
+					}
+				}
+				else
+				{
+					//Otherwise just check our standard conditions
+					if ((*i)->getArmor()->getSize() == 1 && validTarget(*i, true, false) && (*i)->getOriginalFaction() == FACTION_PLAYER)
+					{
+						PsiTargets[(*i)->getId()] = *i;
+					}
+				}
+			}
+		}
+		//Then we iterate through everything we selected in the last stage and evalutate psi odds
+		for (std::map<int, BattleUnit*>::const_iterator i = PsiTargets.begin(); i != PsiTargets.end(); ++i)
 		{
 			// don't target tanks
-			if ((*i)->getArmor()->getSize() == 1 &&
-				validTarget(*i, true, false) &&
+			if ((*i).second->getArmor()->getSize() == 1 &&
+				validTarget((*i).second, true, false) &&
 				// they must be player units
-				(*i)->getOriginalFaction() == FACTION_PLAYER &&
+				(*i).second->getOriginalFaction() == FACTION_PLAYER &&
 				(!LOSRequired ||
-				std::find(_unit->getVisibleUnits()->begin(), _unit->getVisibleUnits()->end(), *i) != _unit->getVisibleUnits()->end()))
+				std::find(_unit->getVisibleUnits()->begin(), _unit->getVisibleUnits()->end(), (*i).second) != _unit->getVisibleUnits()->end()))
 			{
-				BattleUnit *victim = (*i);
+				BattleUnit *victim = (*i).second;
 				if (_save->getTileEngine()->distance(victim->getPosition(), _unit->getPosition()) > item->getRules()->getMaxRange())
 				{
 					continue;
