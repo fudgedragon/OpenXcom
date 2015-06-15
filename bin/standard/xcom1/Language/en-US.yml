@@ -1399,3 +1399,5 @@ en-US:
     other: "NO MORE EQUIPMENT ALLOWED ON BOARD!{SMALLLINE}You are only allowed to take a maximum of {N} items of equipment on this craft."
   STR_FAIRPSIONICS: "Fair Psionics"
   STR_FAIRPSIONICS_DESC: "Forces aliens to use the same rules for Psionics as XCOM.{NEWLINE}Only soldiers that have been seen by an alien during their turn are a valid target."
+  STR_REDUCEDFIRSTTURNREACTIONS: "Reduced First Turn Reactions"
+  STR_REDUCEDFIRSTTURNREACTIONS_DESC: "Reduces alien TUs on the first turn to simulate movement and weaken reaction fire.{NEWLINE}Reduction to 25-75% on Beginner, scaling by 5% per level to 45-95% on Superhuman."
